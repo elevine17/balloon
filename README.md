@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Car Loan Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .slider-track {
+            background: #e5e7eb; /* Tailwind gray-200 */
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #3b82f6; /* Tailwind blue-500 */
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #3b82f6; /* Tailwind blue-500 */
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+        }
+        .output-card h3 {
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .output-card .input-summary {
+            font-size: 0.8rem; /* Smaller text for input summary */
+            color: #4b5563; /* gray-600 */
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px dashed #d1d5db; /* gray-300 */
+        }
+        .output-card .input-summary p {
+            margin-bottom: 0.1rem;
+        }
+        .lease-card h3 { border-bottom: 2px solid #ca8a04; /* Tailwind yellow-500 */}
+        .conv-card h3 { border-bottom: 2px solid #2563eb; /* Tailwind blue-600 */}
+        .bal-card h3 { border-bottom: 2px solid #16a34a; /* Tailwind green-600 */}
+
+        .slider-container {
+            position: relative;
+            margin-bottom: 1.5rem; 
+        }
+        .tooltip {
+            position: absolute;
+            background-color: #374151; /* gray-700 */
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            bottom: calc(100% + 8px); 
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none; 
+        }
+        .slider-container:hover .tooltip,
+        input[type="range"]:focus + .tooltip,
+        input[type="range"]:active + .tooltip {
+            opacity: 1;
+        }
+        .output-value {
+            font-weight: 600; /* semibold */
+            float: right;
+        }
+        .input-group-title {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* semibold */
+            color: #4b5563; /* gray-600 */
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 1px solid #d1d5db; /* gray-300 */
+        }
+        .input-group-title:first-of-type {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 md:p-8">
+    <div class="container mx-auto max-w-7xl bg-white shadow-xl rounded-lg p-6 md:p-10">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Interactive Car Finance Visualizer</h1>
+            <p class="text-gray-600 mt-2">Compare Leasing New vs. Buying Used with Conventional & Balloon Loans (Utah 84032 Estimates).</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-10">
+            <!-- Inputs Column -->
+            <div class="lg:col-span-1 space-y-0 bg-gray-50 p-6 rounded-lg shadow"> 
+                <h2 class="text-xl font-semibold text-gray-700 mb-4 border-b pb-2">Vehicle & Finance Inputs</h2>
+                
+                <h3 class="input-group-title">Global Inputs</h3>
+                <div class="slider-container">
+                    <label for="originalNewVehiclePrice" class="block text-sm font-medium text-gray-700">Original New Vehicle Price: $<span id="originalNewVehiclePriceValue">60000</span></label>
+                    <input type="range" id="originalNewVehiclePrice" min="10000" max="150000" value="60000" step="1000" class="w-full h-2 rounded-lg appearance-none cursor-pointer slider-track">
+                    <div class="tooltip" id="originalNewVehiclePriceTooltip">$60,000</div>
+                </div>
+                <div class="slider-container">
+                    <label for="interestRate" class="block text-sm font-medium text-gray-700">Interest Rate (APR): <span id="interestRateValue">7.5</span>%</label>
+                    <input type="range" id="interestRate" min="0.1" max="20" value="7.5" step="0.1" class="w-full h-2 rounded-lg appearance-none cursor-pointer slider-track">
+                    <div class="tooltip" id="interestRateTooltip">7.5%</div>
+                </div>
+                <div class="slider-container">
+                    <label for="ownershipPeriod" class="block text-sm font-medium text-gray-700">Planned Ownership / Lease Term (Years): <span id="ownershipPeriodValue">3</span></label>
+                    <input type="range" id="ownershipPeriod" min="1" max="7" value="3" step="1" class="w-full h-2 rounded-lg appearance-none cursor-pointer slider-track">
+                    <div class="tooltip" id="ownershipPeriodTooltip">3 Years</div>
+                </div>
+                 <div class="slider-container">
+                    <label for="annualRegFees" class="block text-sm font-medium text-gray-700">Est. Annual Reg & Fees: $<span id="annualRegFeesValue">150</span></label>
+                    <input type="range" id="annualRegFees" min="0" max="1000" value="150" step="10" class="w-full h-2 rounded-lg appearance-none cursor-pointer slider-track">
+                    <div class="tooltip" id="annualRegFeesTooltip">$150</div>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-700">Sales Tax Rate (UT 84032): <span class="font-bold">9.05%</span></p>
+                     <p class="text-xs text-gray-500 mt-1">(Applied to purchases and lease payments/CCR)</p>
+                </div>
+
+
+                <h3 class="input-group-title">Lease (New Car) Specifics</h3>
+                <div class="slider-container">
+                    <label for="capCostReductionLease" class="block text-sm font-medium text-gray-700">Cap Cost Reduction: $<span id="capCostReductionLeaseValue">3000</span></label>
+                    <input type="range" id="capCostReductionLease" min="0" max="75000" value="3000" step="500" class="w-full h-2 rounded-lg appearance-none cursor-pointer slider-track">
+                    <div class="tooltip" id="capCostReductionLeaseTooltip">$3,000</div>
+                </div>
+                <div class="slider-container">
+                    <label for="leaseResidualPercent" class="block text-sm font-medium text-gray-700">Lease Residual Value (% of ONVP): <span id="leaseResidualPercentValue">50</span>%</label>
+                    <input type="range" id="leaseResidualPercent" min="10" max="90" value="50" step="1" class="w-full h-2 rounded-lg appearance-none cursor-pointer slider-track">
+                     <div class="tooltip" id="leaseResidualPercentTooltip">50%</div>
+                </div>
+
+                <h3 class="input-group-title">Loan (Used Car) Specifics</h3>
+                <div class="slider-container">
+                    <label for="initialDepreciationPercent" class="block text-sm font-medium text-gray-700">Initial Used Car Depreciation (% from ONVP): <span id="initialDepreciationPercentValue">25</span>%</label>
+                    <input type="range" id="initialDepreciationPercent" min="0" max="50" value="25" step="1" class="w-full h-2 rounded-lg appearance-none cursor-pointer slider-track">
+                    <div class="tooltip" id="initialDepreciationPercentTooltip">25%</div>
+                </div>
+                <div class="slider-container">
+                    <label for="downPaymentLoans" class="block text-sm font-medium text-gray-700">Down Payment: $<span id="downPaymentLoansValue">10000</span></label>
+                    <input type="range" id="downPaymentLoans" min="0" max="75000" value="10000" step="500" class="w-full h-2 rounded-lg appearance-none cursor-pointer slider-track">
+                    <div class="tooltip" id="downPaymentLoansTooltip">$10,000</div>
+                </div>
+                <div class="slider-container">
+                    <label for="loanTermYears" class="block text-sm font-medium text-gray-700">Full Loan Term (Years): <span id="loanTermYearsValue">5</span></label>
+                    <input type="range" id="loanTermYears" min="1" max="10" value="5" step="1" class="w-full h-2 rounded-lg appearance-none cursor-pointer slider-track">
+                    <div class="tooltip" id="loanTermYearsTooltip">5 Years</div>
+                </div>
+                <div class="slider-container">
+                    <label for="loanResalePercent" class="block text-sm font-medium text-gray-700">Loan Resale Value (% of ONVP): <span id="loanResalePercentValue">40</span>%</label>
+                    <input type="range" id="loanResalePercent" min="10" max="90" value="40" step="1" class="w-full h-2 rounded-lg appearance-none cursor-pointer slider-track">
+                     <div class="tooltip" id="loanResalePercentTooltip">40%</div>
+                     <p class="text-xs text-gray-500 mt-1">Est. value of used car at end of your ownership.</p>
+                </div>
+
+                <h3 class="input-group-title">Balloon Loan Specific</h3>
+                <div class="slider-container">
+                    <label for="desiredEquityPercentOfDP" class="block text-sm font-medium text-gray-700">Desired Equity at Sale (% of Loan Down Payment): <span id="desiredEquityPercentOfDPValue">100</span>%</label>
+                    <input type="range" id="desiredEquityPercentOfDP" min="0" max="300" value="100" step="5" class="w-full h-2 rounded-lg appearance-none cursor-pointer slider-track">
+                    <div class="tooltip" id="desiredEquityPercentOfDPTooltip">100%</div>
+                </div>
+            </div>
+
+            <!-- Outputs Column -->
+            <div class="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                <!-- Lease (New Car) Output -->
+                <div class="output-card lease-card bg-yellow-50 p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold text-yellow-700">Lease (New Car)</h3>
+                    <div class="input-summary">
+                        <p>ONVP: <span class="output-value text-gray-700">$<span id="leaseInputONVP">0</span></span></p>
+                        <p>Cap Cost Red.: <span class="output-value text-gray-700">$<span id="leaseInputCCR">0</span></span></p>
+                        <p>Term: <span class="output-value text-gray-700"><span id="leaseInputTerm">0</span> Yr</span></p>
+                        <p>APR (approx): <span class="output-value text-gray-700"><span id="leaseInputAPR">0</span>%</span></p>
+                        <p>Residual: <span class="output-value text-gray-700"><span id="leaseInputResidualPercent">0</span>%</span></p>
+                        <p>Sales Tax Rate: <span class="output-value text-gray-700"><span id="leaseInputSalesTaxRate">0</span>%</span></p>
+                        <p>Annual Reg.: <span class="output-value text-gray-700">$<span id="leaseInputAnnualReg">0</span></span></p>
+                    </div>
+                    <div class="space-y-2 text-sm text-gray-700">
+                        <p>Net Cap Cost (Approx): <span class="output-value text-yellow-600">$<span id="leaseNetCapCost">0</span></span></p>
+                        <p>Monthly Pymt (incl. tax): <span class="output-value text-yellow-600">$<span id="leaseMonthlyPayment">0.00</span></span></p>
+                        <p>Total Lease Payments: <span class="output-value text-yellow-600">$<span id="leaseTotalPaid">0</span></span></p>
+                        <p>Total Sales Tax Paid: <span class="output-value text-yellow-600">$<span id="leaseTotalSalesTax">0</span></span></p>
+                        <p>Total Reg. Fees Paid: <span class="output-value text-yellow-600">$<span id="leaseTotalRegFees">0</span></span></p>
+                        <p>Residual Value ($): <span class="output-value text-yellow-600">$<span id="leaseResidualValue">0</span></span></p>
+                        <p>Equity at Lease End: <span class="output-value text-yellow-600">$<span id="leaseEquity">0</span></span></p>
+                        <p class="mt-2 pt-2 border-t">Total Cost of Ownership (TCO): <strong class="text-xl output-value text-yellow-800">$<span id="leaseTCO">0</span></strong></p>
+                    </div>
+                </div>
+
+                <!-- Conventional Loan (Used Car) Output -->
+                <div class="output-card conv-card bg-blue-50 p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold text-blue-700">Conv. Loan (Used Car)</h3>
+                    <div class="input-summary">
+                        <p>Used Price: <span class="output-value text-gray-700">$<span id="convInputUsedPrice">0</span></span></p>
+                        <p>Down Payment: <span class="output-value text-gray-700">$<span id="convInputDP">0</span></span></p>
+                        <p>Full Loan Term: <span class="output-value text-gray-700"><span id="convInputFullTerm">0</span> Yr</span></p>
+                        <p>Ownership: <span class="output-value text-gray-700"><span id="convInputOwnTerm">0</span> Yr</span></p>
+                        <p>APR: <span class="output-value text-gray-700"><span id="convInputAPR">0</span>%</span></p>
+                        <p>Resale (% ONVP): <span class="output-value text-gray-700"><span id="convInputResalePercent">0</span>%</span></p>
+                        <p>Sales Tax Rate: <span class="output-value text-gray-700"><span id="convInputSalesTaxRate">0</span>%</span></p>
+                        <p>Annual Reg.: <span class="output-value text-gray-700">$<span id="convInputAnnualReg">0</span></span></p>
+                    </div>
+                    <div class="space-y-2 text-sm text-gray-700">
+                        <p>Used Car Price: <span class="output-value text-blue-600">$<span id="convMainUsedCarPriceDisplay">0</span></span></p>
+                        <p>Loan Amount: <span class="output-value text-blue-600">$<span id="convLoanAmount">0</span></span></p>
+                        <p>Full Loan Term: <span class="output-value text-blue-600"><span id="convFullLoanTermDisplayOutput">0</span> Years</span></p>
+                        <p>Monthly Payment: <span class="output-value text-blue-600">$<span id="convMonthlyPayment">0.00</span></span></p>
+                        <p>Total Payments Made: <span class="output-value text-blue-600">$<span id="convTotalPaid">0</span></span></p>
+                        <p>Upfront Sales Tax: <span class="output-value text-blue-600">$<span id="convTotalSalesTax">0</span></span></p>
+                        <p>Total Reg. & Title Fees: <span class="output-value text-blue-600">$<span id="convTotalRegFees">0</span></span></p>
+                        <p>Est. Resale Value ($): <span class="output-value text-blue-600">$<span id="convResaleValue">0</span></span></p>
+                        <p>Loan Balance at Sale: <span class="output-value text-blue-600">$<span id="convLoanBalanceAtSale">0</span></span></p>
+                        <p>Estimated Equity at Sale: <span class="output-value text-blue-600">$<span id="convEquity">0</span></span></p>
+                        <p class="mt-2 pt-2 border-t">Total Cost of Ownership (TCO): <strong class="text-xl output-value text-blue-800">$<span id="convTCO">0</span></strong></p>
+                    </div>
+                </div>
+
+                <!-- Balloon Loan (Used Car) Output -->
+                <div class="output-card bal-card bg-green-50 p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold text-green-700">Balloon Loan (Used Car)</h3>
+                     <div class="input-summary">
+                        <p>Used Price: <span class="output-value text-gray-700">$<span id="balInputUsedPrice">0</span></span></p>
+                        <p>Down Payment: <span class="output-value text-gray-700">$<span id="balInputDP">0</span></span></p>
+                        <p>Ownership: <span class="output-value text-gray-700"><span id="balInputOwnTerm">0</span> Yr</span></p>
+                        <p>APR: <span class="output-value text-gray-700"><span id="balInputAPR">0</span>%</span></p>
+                        <p>Resale (% ONVP): <span class="output-value text-gray-700"><span id="balInputResalePercent">0</span>%</span></p>
+                        <p>Target Equity (% DP): <span class="output-value text-gray-700"><span id="balInputTargetEquityPercent">0</span>%</span></p>
+                        <p>Sales Tax Rate: <span class="output-value text-gray-700"><span id="balInputSalesTaxRate">0</span>%</span></p>
+                        <p>Annual Reg.: <span class="output-value text-gray-700">$<span id="balInputAnnualReg">0</span></span></p>
+                    </div>
+                    <div class="space-y-2 text-sm text-gray-700">
+                        <p>Used Car Price: <span class="output-value text-green-600">$<span id="balMainUsedCarPriceDisplay">0</span></span></p>
+                        <p>Loan Amount: <span class="output-value text-green-600">$<span id="balLoanAmount">0</span></span></p>
+                        <p>Monthly Payment (calc.): <span class="output-value text-green-600">$<span id="balMonthlyPaymentCalculated">0.00</span></span></p>
+                        <p>Total Payments Made: <span class="output-value text-green-600">$<span id="balTotalPaid">0</span></span></p>
+                        <p>Upfront Sales Tax: <span class="output-value text-green-600">$<span id="balTotalSalesTax">0</span></span></p>
+                        <p>Total Reg. & Title Fees: <span class="output-value text-green-600">$<span id="balTotalRegFees">0</span></span></p>
+                        <p>Est. Resale Value ($): <span class="output-value text-green-600">$<span id="balResaleValue">0</span></span></p>
+                        <p>Balloon (Balance at Sale): <span class="output-value text-green-600">$<span id="balBalloonPayment">0</span></span></p>
+                        <p>Desired Equity at Sale ($): <span class="output-value text-green-600">$<span id="balEquityDesiredDollar">0</span></span></p>
+                        <p class="mt-2 pt-2 border-t">Total Cost of Ownership (TCO): <strong class="text-xl output-value text-green-800">$<span id="balTCO">0</span></strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-8 p-4 bg-gray-100 rounded-lg">
+            <p class="text-sm text-gray-600">
+                <strong>Disclaimer:</strong> This tool is for illustrative and educational purposes only.
+                Calculations are estimates and do not include all potential taxes, fees (e.g., acquisition/disposition on leases), insurance, or other costs.
+                Actual loan/lease terms, resale values, and costs may vary. Consult with financial and automotive professionals for personalized advice.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements - Sliders
+        const originalNewVehiclePriceSlider = document.getElementById('originalNewVehiclePrice');
+        const initialDepreciationPercentSlider = document.getElementById('initialDepreciationPercent');
+        const downPaymentLoansSlider = document.getElementById('downPaymentLoans');
+        const capCostReductionLeaseSlider = document.getElementById('capCostReductionLease');
+        const interestRateSlider = document.getElementById('interestRate');
+        const loanTermYearsSlider = document.getElementById('loanTermYears'); 
+        const ownershipPeriodSlider = document.getElementById('ownershipPeriod');
+        const annualRegFeesSlider = document.getElementById('annualRegFees'); 
+        const leaseResidualPercentSlider = document.getElementById('leaseResidualPercent'); 
+        const loanResalePercentSlider = document.getElementById('loanResalePercent'); 
+        const desiredEquityPercentOfDPSlider = document.getElementById('desiredEquityPercentOfDP'); 
+
+        // DOM Elements - Value Displays
+        const originalNewVehiclePriceValue = document.getElementById('originalNewVehiclePriceValue');
+        const initialDepreciationPercentValue = document.getElementById('initialDepreciationPercentValue');
+        const downPaymentLoansValue = document.getElementById('downPaymentLoansValue');
+        const capCostReductionLeaseValue = document.getElementById('capCostReductionLeaseValue');
+        const interestRateValue = document.getElementById('interestRateValue');
+        const loanTermYearsValue = document.getElementById('loanTermYearsValue');
+        const ownershipPeriodValue = document.getElementById('ownershipPeriodValue');
+        const annualRegFeesValue = document.getElementById('annualRegFeesValue'); 
+        const leaseResidualPercentValue = document.getElementById('leaseResidualPercentValue'); 
+        const loanResalePercentValue = document.getElementById('loanResalePercentValue'); 
+        const desiredEquityPercentOfDPValue = document.getElementById('desiredEquityPercentOfDPValue'); 
+
+        // DOM Elements - Tooltips
+        const originalNewVehiclePriceTooltip = document.getElementById('originalNewVehiclePriceTooltip');
+        const initialDepreciationPercentTooltip = document.getElementById('initialDepreciationPercentTooltip');
+        const downPaymentLoansTooltip = document.getElementById('downPaymentLoansTooltip');
+        const capCostReductionLeaseTooltip = document.getElementById('capCostReductionLeaseTooltip');
+        const interestRateTooltip = document.getElementById('interestRateTooltip');
+        const loanTermYearsTooltip = document.getElementById('loanTermYearsTooltip');
+        const ownershipPeriodTooltip = document.getElementById('ownershipPeriodTooltip');
+        const annualRegFeesTooltip = document.getElementById('annualRegFeesTooltip'); 
+        const leaseResidualPercentTooltip = document.getElementById('leaseResidualPercentTooltip'); 
+        const loanResalePercentTooltip = document.getElementById('loanResalePercentTooltip'); 
+        const desiredEquityPercentOfDPTooltip = document.getElementById('desiredEquityPercentOfDPTooltip'); 
+
+        // Lease Outputs
+        const leaseNetCapCost = document.getElementById('leaseNetCapCost');
+        const leaseMonthlyPayment = document.getElementById('leaseMonthlyPayment');
+        const leaseTotalPaid = document.getElementById('leaseTotalPaid');
+        const leaseTotalSalesTax = document.getElementById('leaseTotalSalesTax'); 
+        const leaseTotalRegFees = document.getElementById('leaseTotalRegFees'); 
+        const leaseResidualValue = document.getElementById('leaseResidualValue');
+        const leaseEquity = document.getElementById('leaseEquity');
+        const leaseTCO = document.getElementById('leaseTCO');
+        // Lease Input Summary Spans
+        const leaseInputONVP = document.getElementById('leaseInputONVP');
+        const leaseInputCCR = document.getElementById('leaseInputCCR');
+        const leaseInputTerm = document.getElementById('leaseInputTerm');
+        const leaseInputAPR = document.getElementById('leaseInputAPR');
+        const leaseInputResidualPercent = document.getElementById('leaseInputResidualPercent');
+        const leaseInputSalesTaxRate = document.getElementById('leaseInputSalesTaxRate'); 
+        const leaseInputAnnualReg = document.getElementById('leaseInputAnnualReg'); 
+
+
+        // Conventional Loan Outputs
+        const convMainUsedCarPriceDisplay = document.getElementById('convMainUsedCarPriceDisplay'); // Corrected ID
+        const convLoanAmount = document.getElementById('convLoanAmount');
+        const convFullLoanTermDisplayOutput = document.getElementById('convFullLoanTermDisplayOutput'); // Corrected ID
+        const convMonthlyPayment = document.getElementById('convMonthlyPayment');
+        const convTotalPaid = document.getElementById('convTotalPaid');
+        const convTotalSalesTax = document.getElementById('convTotalSalesTax'); 
+        const convTotalRegFees = document.getElementById('convTotalRegFees'); 
+        const convResaleValue = document.getElementById('convResaleValue');
+        const convLoanBalanceAtSale = document.getElementById('convLoanBalanceAtSale');
+        const convEquity = document.getElementById('convEquity');
+        const convTCO = document.getElementById('convTCO');
+        // Conv Input Summary Spans
+        const convInputUsedPrice = document.getElementById('convInputUsedPrice');
+        const convInputDP = document.getElementById('convInputDP');
+        const convInputFullTerm = document.getElementById('convInputFullTerm');
+        const convInputOwnTerm = document.getElementById('convInputOwnTerm');
+        const convInputAPR = document.getElementById('convInputAPR');
+        const convInputResalePercent = document.getElementById('convInputResalePercent');
+        const convInputSalesTaxRate = document.getElementById('convInputSalesTaxRate'); 
+        const convInputAnnualReg = document.getElementById('convInputAnnualReg'); 
+
+
+        // Balloon Loan Outputs
+        const balMainUsedCarPriceDisplay = document.getElementById('balMainUsedCarPriceDisplay'); // Corrected ID
+        const balLoanAmount = document.getElementById('balLoanAmount');
+        const balMonthlyPaymentCalculated = document.getElementById('balMonthlyPaymentCalculated');
+        const balTotalPaid = document.getElementById('balTotalPaid');
+        const balTotalSalesTax = document.getElementById('balTotalSalesTax'); 
+        const balTotalRegFees = document.getElementById('balTotalRegFees'); 
+        const balResaleValue = document.getElementById('balResaleValue');
+        const balBalloonPayment = document.getElementById('balBalloonPayment');
+        const balEquityDesiredDollar = document.getElementById('balEquityDesiredDollar'); 
+        const balTCO = document.getElementById('balTCO');
+        // Bal Input Summary Spans
+        const balInputUsedPrice = document.getElementById('balInputUsedPrice');
+        const balInputDP = document.getElementById('balInputDP');
+        const balInputOwnTerm = document.getElementById('balInputOwnTerm');
+        const balInputAPR = document.getElementById('balInputAPR');
+        const balInputResalePercent = document.getElementById('balInputResalePercent');
+        const balInputTargetEquityPercent = document.getElementById('balInputTargetEquityPercent');
+        const balInputSalesTaxRate = document.getElementById('balInputSalesTaxRate'); 
+        const balInputAnnualReg = document.getElementById('balInputAnnualReg'); 
+
+
+        function formatCurrency(value) {
+            return Math.round(value).toLocaleString('en-US');
+        }
+
+        function formatCurrencyWithCents(value) {
+            if (isNaN(value) || !isFinite(value)) return '0.00';
+            return parseFloat(value.toFixed(2)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        
+        function updateTooltip(slider, tooltipElement) {
+            const val = slider.value;
+            const min = slider.min ? parseFloat(slider.min) : 0;
+            let max = slider.max ? parseFloat(slider.max) : 100; 
+            if (slider.id === 'desiredEquityPercentOfDP' || slider.id === 'annualRegFees') { 
+                 max = parseFloat(slider.max); 
+            }
+
+            const percent = ((val - min) / (max - min)) * 100;
+            
+            let displayVal = '';
+            if (slider.id === 'originalNewVehiclePrice' || slider.id === 'downPaymentLoans' || slider.id === 'capCostReductionLease' || slider.id === 'annualRegFees') { 
+                displayVal = `$${formatCurrency(parseFloat(val))}`;
+            } else if (slider.id === 'interestRate') {
+                displayVal = `${parseFloat(val).toFixed(1)}%`;
+            } else if (slider.id === 'ownershipPeriod' || slider.id === 'loanTermYears') {
+                displayVal = `${val} Year${parseInt(val) > 1 ? 's' : ''}`;
+            } else if (slider.id === 'initialDepreciationPercent' || slider.id === 'leaseResidualPercent' || slider.id === 'loanResalePercent' || slider.id === 'desiredEquityPercentOfDP') { 
+                 displayVal = `${val}%`;
+            } else {
+                displayVal = val;
+            }
+            tooltipElement.textContent = displayVal;
+            
+            const thumbWidth = 20; 
+            const sliderWidth = slider.offsetWidth;
+            const thumbPosition = (percent / 100) * (sliderWidth - thumbWidth) + (thumbWidth / 2);
+            tooltipElement.style.left = `${thumbPosition}px`;
+        }
+
+        function calculateLoanDetails() {
+            const originalONVP = parseFloat(originalNewVehiclePriceSlider.value);
+            const initialDepPercent = parseFloat(initialDepreciationPercentSlider.value) / 100;
+            let dpLoans = parseFloat(downPaymentLoansSlider.value);
+            let capCostRedLease = parseFloat(capCostReductionLeaseSlider.value);
+            const annualRate = parseFloat(interestRateSlider.value) / 100;
+            const fullLoanTermYears = parseInt(loanTermYearsSlider.value);
+            const fullLoanTermMonthsForConv = fullLoanTermYears * 12; 
+            const ownershipYears = parseInt(ownershipPeriodSlider.value);
+            const ownershipMonths = ownershipYears * 12; 
+            const annualRegistrationFee = parseFloat(annualRegFeesSlider.value); 
+            const leaseResidualSliderPercent = parseFloat(leaseResidualPercentSlider.value) / 100; 
+            const loanResaleSliderPercent = parseFloat(loanResalePercentSlider.value) / 100; 
+            const desiredEquityPercentOfDP = parseFloat(desiredEquityPercentOfDPSlider.value) / 100; 
+
+            const salesTaxRate = 0.0905; 
+            const titleFee = 6.00; 
+
+            const monthlyRate = annualRate / 12;
+            const usedCarPurchasePrice = originalONVP * (1 - initialDepPercent);
+
+            dpLoans = Math.max(0, Math.min(dpLoans, usedCarPurchasePrice)); 
+            capCostRedLease = Math.max(0, Math.min(capCostRedLease, originalONVP));
+            
+            if (parseFloat(downPaymentLoansSlider.value) > usedCarPurchasePrice) {
+                downPaymentLoansSlider.value = usedCarPurchasePrice;
+            }
+             if (parseFloat(downPaymentLoansSlider.value) < 0) {
+                downPaymentLoansSlider.value = 0;
+            }
+            downPaymentLoansValue.textContent = formatCurrency(dpLoans); 
+            updateTooltip(downPaymentLoansSlider, downPaymentLoansTooltip);
+
+
+             if (parseFloat(capCostReductionLeaseSlider.value) > originalONVP) {
+                capCostReductionLeaseSlider.value = originalONVP;
+             }
+             if (parseFloat(capCostReductionLeaseSlider.value) < 0) {
+                capCostReductionLeaseSlider.value = 0;
+             }
+            capCostReductionLeaseValue.textContent = formatCurrency(capCostRedLease); 
+            updateTooltip(capCostReductionLeaseSlider, capCostReductionLeaseTooltip);
+
+
+            const loanPrincipalForLoans = Math.max(0, usedCarPurchasePrice - dpLoans);
+            const netCapCostForLease = Math.max(0, originalONVP - capCostRedLease); 
+            
+            const leaseResidualVal = originalONVP * leaseResidualSliderPercent; 
+            const loanFinalResaleValue = originalONVP * loanResaleSliderPercent; 
+
+
+            // --- Lease (New Car) Calculations ---
+            leaseInputONVP.textContent = formatCurrency(originalONVP);
+            leaseInputCCR.textContent = formatCurrency(capCostRedLease);
+            leaseInputTerm.textContent = ownershipYears;
+            leaseInputAPR.textContent = (annualRate * 100).toFixed(1);
+            leaseInputResidualPercent.textContent = (leaseResidualSliderPercent * 100).toFixed(0);
+            leaseInputSalesTaxRate.textContent = (salesTaxRate * 100).toFixed(2);
+            leaseInputAnnualReg.textContent = formatCurrency(annualRegistrationFee);
+
+
+            const leaseDepreciation = Math.max(0, netCapCostForLease - leaseResidualVal);
+            const leaseMonthlyDep = ownershipMonths > 0 ? leaseDepreciation / ownershipMonths : 0;
+            const moneyFactor = annualRate / 2400; 
+            const leaseMonthlyFin = (netCapCostForLease + leaseResidualVal) * moneyFactor;
+            const leaseMP_beforeTax = leaseMonthlyDep + leaseMonthlyFin;
+            
+            const salesTaxOnCCR = capCostRedLease * salesTaxRate;
+            const salesTaxPerMonthOnLease = leaseMP_beforeTax * salesTaxRate;
+            const leaseMP_withTax = leaseMP_beforeTax + salesTaxPerMonthOnLease;
+            const totalSalesTaxPaidOnLease = salesTaxOnCCR + (salesTaxPerMonthOnLease * ownershipMonths);
+            const totalRegFeesPaidOnLease = annualRegistrationFee * ownershipYears;
+
+            const leaseTotalPaymentsMade = leaseMP_withTax * ownershipMonths; 
+            const leaseEq = 0; 
+            const leaseTotalCost = capCostRedLease + salesTaxOnCCR + leaseTotalPaymentsMade + totalRegFeesPaidOnLease - leaseEq; 
+
+            leaseNetCapCost.textContent = formatCurrency(netCapCostForLease);
+            leaseMonthlyPayment.textContent = formatCurrencyWithCents(leaseMP_withTax);
+            leaseTotalPaid.textContent = formatCurrency(leaseTotalPaymentsMade);
+            leaseTotalSalesTax.textContent = formatCurrency(totalSalesTaxPaidOnLease);
+            leaseTotalRegFees.textContent = formatCurrency(totalRegFeesPaidOnLease);
+            leaseResidualValue.textContent = formatCurrency(leaseResidualVal);
+            leaseEquity.textContent = formatCurrency(leaseEq);
+            leaseTCO.textContent = formatCurrency(leaseTotalCost);
+
+            // --- Conventional Loan (Used Car) Calculations ---
+            convInputUsedPrice.textContent = formatCurrency(usedCarPurchasePrice);
+            convInputDP.textContent = formatCurrency(dpLoans);
+            convInputFullTerm.textContent = fullLoanTermYears;
+            convInputOwnTerm.textContent = ownershipYears;
+            convInputAPR.textContent = (annualRate * 100).toFixed(1);
+            convInputResalePercent.textContent = (loanResaleSliderPercent * 100).toFixed(0);
+            convInputSalesTaxRate.textContent = (salesTaxRate * 100).toFixed(2);
+            convInputAnnualReg.textContent = formatCurrency(annualRegistrationFee);
+
+            let convMP = 0;
+            if (loanPrincipalForLoans > 0 && fullLoanTermMonthsForConv > 0) {
+                if (monthlyRate > 0) {
+                    convMP = loanPrincipalForLoans * (monthlyRate * Math.pow(1 + monthlyRate, fullLoanTermMonthsForConv)) / (Math.pow(1 + monthlyRate, fullLoanTermMonthsForConv) - 1);
+                } else { 
+                    convMP = loanPrincipalForLoans / fullLoanTermMonthsForConv;
+                }
+            }
+            convMP = isNaN(convMP) || !isFinite(convMP) ? 0 : convMP;
+            
+            const convTotalPaymentsMadeInOwnership = convMP * ownershipMonths;
+            
+            let convBalAtSale = 0;
+            if (loanPrincipalForLoans > 0 && ownershipMonths > 0) {
+                if (monthlyRate > 0) {
+                     convBalAtSale = loanPrincipalForLoans * Math.pow(1 + monthlyRate, ownershipMonths) - convMP * ( (Math.pow(1 + monthlyRate, ownershipMonths) - 1) / monthlyRate );
+                } else { 
+                    convBalAtSale = loanPrincipalForLoans - (convMP * ownershipMonths);
+                }
+            }
+            convBalAtSale = Math.max(0, (isNaN(convBalAtSale) || !isFinite(convBalAtSale) ? 0 : convBalAtSale));
+            if (ownershipMonths >= fullLoanTermMonthsForConv) {
+                convBalAtSale = 0;
+            }
+
+            const salesTaxOnPurchase = usedCarPurchasePrice * salesTaxRate;
+            const totalRegAndTitleFeesForLoan = (annualRegistrationFee * ownershipYears) + titleFee;
+            const convEq = loanFinalResaleValue - convBalAtSale;
+            const convTotalCost = (dpLoans + salesTaxOnPurchase + titleFee) + convTotalPaymentsMadeInOwnership + (annualRegistrationFee * ownershipYears) - convEq;
+
+
+            convMainUsedCarPriceDisplay.textContent = formatCurrency(usedCarPurchasePrice); 
+            convLoanAmount.textContent = formatCurrency(loanPrincipalForLoans);
+            convFullLoanTermDisplayOutput.textContent = parseInt(loanTermYearsSlider.value); 
+            convMonthlyPayment.textContent = formatCurrencyWithCents(convMP);
+            convTotalPaid.textContent = formatCurrency(convTotalPaymentsMadeInOwnership);
+            convTotalSalesTax.textContent = formatCurrency(salesTaxOnPurchase);
+            convTotalRegFees.textContent = formatCurrency(totalRegAndTitleFeesForLoan);
+            convResaleValue.textContent = formatCurrency(loanFinalResaleValue);
+            convLoanBalanceAtSale.textContent = formatCurrency(convBalAtSale);
+            convEquity.textContent = formatCurrency(convEq);
+            convTCO.textContent = formatCurrency(convTotalCost);
+
+            // --- Balloon Loan (Used Car) Calculations ---
+            balInputUsedPrice.textContent = formatCurrency(usedCarPurchasePrice);
+            balInputDP.textContent = formatCurrency(dpLoans);
+            balInputOwnTerm.textContent = ownershipYears;
+            balInputAPR.textContent = (annualRate * 100).toFixed(1); // Corrected from $ to %
+            balInputResalePercent.textContent = (loanResaleSliderPercent * 100).toFixed(0);
+            balInputTargetEquityPercent.textContent = (desiredEquityPercentOfDP * 100).toFixed(0);
+            balInputSalesTaxRate.textContent = (salesTaxRate * 100).toFixed(2);
+            balInputAnnualReg.textContent = formatCurrency(annualRegistrationFee);
+
+
+            let desiredEquityDollarAmount = dpLoans * desiredEquityPercentOfDP;
+            desiredEquityDollarAmount = Math.min(desiredEquityDollarAmount, loanFinalResaleValue); 
+             if (dpLoans === 0 && desiredEquityPercentOfDP > 0) { 
+                desiredEquityDollarAmount = 0;
+            }
+
+
+            const targetBalloonFV = Math.max(0, loanFinalResaleValue - desiredEquityDollarAmount);
+            let requiredMonthlyForBalloon = 0;
+
+            if (loanPrincipalForLoans > 0 && ownershipMonths > 0) {
+                if (monthlyRate > 0) {
+                    const termPower = Math.pow(1 + monthlyRate, ownershipMonths);
+                    if (termPower - 1 === 0) { 
+                        requiredMonthlyForBalloon = (loanPrincipalForLoans - targetBalloonFV) / ownershipMonths;
+                    } else {
+                         requiredMonthlyForBalloon = (loanPrincipalForLoans - (targetBalloonFV / termPower)) * (monthlyRate * termPower) / (termPower - 1);
+                    }
+                } else { 
+                    requiredMonthlyForBalloon = (loanPrincipalForLoans - targetBalloonFV) / ownershipMonths;
+                }
+            }
+            requiredMonthlyForBalloon = Math.max(0, (isNaN(requiredMonthlyForBalloon) || !isFinite(requiredMonthlyForBalloon) ? 0 : requiredMonthlyForBalloon) );
+
+            const balTotalPaymentsMade = requiredMonthlyForBalloon * ownershipMonths;
+            const balActualEquity = loanFinalResaleValue - targetBalloonFV; 
+            const balTotalCost = (dpLoans + salesTaxOnPurchase + titleFee) + balTotalPaymentsMade + (annualRegistrationFee * ownershipYears) - balActualEquity;
+
+            balMainUsedCarPriceDisplay.textContent = formatCurrency(usedCarPurchasePrice); 
+            balLoanAmount.textContent = formatCurrency(loanPrincipalForLoans);
+            balMonthlyPaymentCalculated.textContent = formatCurrencyWithCents(requiredMonthlyForBalloon);
+            balTotalPaid.textContent = formatCurrency(balTotalPaymentsMade);
+            balTotalSalesTax.textContent = formatCurrency(salesTaxOnPurchase);
+            balTotalRegFees.textContent = formatCurrency(totalRegAndTitleFeesForLoan);
+            balResaleValue.textContent = formatCurrency(loanFinalResaleValue); 
+            balBalloonPayment.textContent = formatCurrency(targetBalloonFV);
+            balEquityDesiredDollar.textContent = formatCurrency(balActualEquity); 
+            balTCO.textContent = formatCurrency(balTotalCost);
+        }
+
+        const sliders = [
+            originalNewVehiclePriceSlider, initialDepreciationPercentSlider, 
+            downPaymentLoansSlider, capCostReductionLeaseSlider, 
+            interestRateSlider, loanTermYearsSlider, 
+            ownershipPeriodSlider, annualRegFeesSlider, 
+            leaseResidualPercentSlider, loanResalePercentSlider, 
+            desiredEquityPercentOfDPSlider 
+        ];
+        const valueDisplays = [
+            originalNewVehiclePriceValue, initialDepreciationPercentValue, 
+            downPaymentLoansValue, capCostReductionLeaseValue, 
+            interestRateValue, loanTermYearsValue, 
+            ownershipPeriodValue, annualRegFeesValue, 
+            leaseResidualPercentValue, loanResalePercentValue, 
+            desiredEquityPercentOfDPValue 
+        ];
+         const tooltipDisplays = [
+            originalNewVehiclePriceTooltip, initialDepreciationPercentTooltip, 
+            downPaymentLoansTooltip, capCostReductionLeaseTooltip, 
+            interestRateTooltip, loanTermYearsTooltip, 
+            ownershipPeriodTooltip, annualRegFeesTooltip, 
+            leaseResidualPercentTooltip, loanResalePercentTooltip, 
+            desiredEquityPercentOfDPTooltip 
+        ];
+
+        sliders.forEach((slider, index) => {
+            slider.addEventListener('input', () => {
+                if (slider.id === 'originalNewVehiclePrice' || slider.id === 'downPaymentLoans' || slider.id === 'capCostReductionLease' || slider.id === 'annualRegFees' ) { 
+                    valueDisplays[index].textContent = formatCurrency(parseFloat(slider.value));
+                } else if (slider.id === 'interestRate') {
+                    valueDisplays[index].textContent = parseFloat(slider.value).toFixed(1);
+                } else if (slider.id === 'desiredEquityPercentOfDP') { 
+                     valueDisplays[index].textContent = slider.value; 
+                }
+                else {
+                    valueDisplays[index].textContent = slider.value;
+                }
+                updateTooltip(slider, tooltipDisplays[index]);
+                calculateLoanDetails();
+            });
+            slider.addEventListener('mouseenter', () => updateTooltip(slider, tooltipDisplays[index]));
+            slider.addEventListener('focus', () => updateTooltip(slider, tooltipDisplays[index]));
+        });
+        
+        document.addEventListener('DOMContentLoaded', () => { 
+            sliders.forEach((slider, index) => {
+                 if (slider.id === 'originalNewVehiclePrice' || slider.id === 'downPaymentLoans' || slider.id === 'capCostReductionLease' || slider.id === 'annualRegFees') { 
+                    valueDisplays[index].textContent = formatCurrency(parseFloat(slider.value));
+                } else if (slider.id === 'interestRate') {
+                    valueDisplays[index].textContent = parseFloat(slider.value).toFixed(1);
+                } else if (slider.id === 'desiredEquityPercentOfDP') { 
+                     valueDisplays[index].textContent = slider.value; 
+                }
+                 else {
+                    valueDisplays[index].textContent = slider.value;
+                }
+                updateTooltip(slider, tooltipDisplays[index]);
+            });
+            calculateLoanDetails();
+        });
+    </script>
+</body>
+</html>
